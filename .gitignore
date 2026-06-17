@@ -41,6 +41,6 @@ Thumbs.db
 # Uploads (temporary files)
 uploads/
 
-# Generated test files (regenerate with python create_malicious.py)
+# Generated test files (regenerate with python -m vuln.xxe)
 malicious_test.xlsx
 ssrf_test.xlsx

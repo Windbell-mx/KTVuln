@@ -122,7 +122,7 @@ class XXEVulnerabilityTool:
     
     def generate_test_file(self, output_path='malicious_test.xlsx'):
         """
-        生成恶意测试文件
+        生成恶意测试文件（POC）
         
         Args:
             output_path: 输出文件路径
@@ -198,3 +198,10 @@ class XXEVulnerabilityTool:
             zipf.writestr('docProps/core.xml', docprops_xml)
         
         return output_path
+
+
+if __name__ == '__main__':
+    # 直接运行此文件生成测试POC
+    tool = XXEVulnerabilityTool()
+    output = tool.generate_test_file()
+    print(f"✅ 测试文件已生成: {output}")

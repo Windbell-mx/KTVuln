@@ -30,10 +30,15 @@ pip install -r requirements.txt
 ### 2. 生成测试文件
 
 ```bash
-python create_malicious.py
+python -m vuln.xxe
 ```
 
-这将创建恶意xlsx文件 `malicious_test.xlsx`，包含XXE攻击载荷。
+或将当前目录切换到项目根目录后运行：
+```bash
+python vuln/xxe.py
+```
+
+这将生成恶意xlsx文件 `malicious_test.xlsx`，包含XXE攻击载荷。
 
 ### 3. 启动应用
 
@@ -54,13 +59,12 @@ python app.py
 ```
 KTVuln/
 ├── app.py                  # 主应用入口（统一平台）
-├── create_malicious.py     # 测试文件生成器
 ├── requirements.txt        # Python依赖
 ├── README.md               # 项目说明文档
 ├── .gitignore              # Git忽略配置
 └── vuln/                   # 漏洞验证模块目录
     ├── __init__.py         # 模块包
-    └── xxe.py              # XXE漏洞验证模块
+    └── xxe.py              # XXE漏洞验证模块（含POC生成）
 ```
 
 ## 🔧 添加新漏洞模块
