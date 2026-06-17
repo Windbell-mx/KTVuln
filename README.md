@@ -1,27 +1,23 @@
-# XXE漏洞验证工具
+# 漏洞验证平台
 
 ## 📖 项目简介
 
-本项目用于演示和验证通过Excel文件（.xlsx）上传触发的XXE（XML External Entity）漏洞。
+本项目是一个统一的Web应用安全漏洞验证平台，支持多种漏洞类型的演示和测试。
+
+### 已支持的漏洞类型
+
+| 漏洞类型 | 标识 | 描述 |
+|---------|------|------|
+| XXE (XML外部实体注入) | `xxe` | 通过Excel文件上传触发XML外部实体注入漏洞 |
 
 ### 什么是XXE漏洞？
 
-XXE（XML外部实体）漏洞是一种Web安全漏洞，当应用程序解析用户提供的XML输入时，如果未正确配置XML解析器禁用外部实体，攻击者就可以构造恶意的XML内容来：
+XXE（XML External Entity）漏洞是一种Web安全漏洞，当应用程序解析用户提供的XML输入时，如果未正确配置XML解析器禁用外部实体，攻击者就可以构造恶意的XML内容来：
 
 - 📄 **读取服务器敏感文件**（如配置文件、密码文件等）
 - 🔗 **发起SSRF攻击**（访问内网服务）
 - 💥 **导致拒绝服务（DoS）**
 - ⚡ **在某些情况下执行远程代码**
-
-### 为什么Excel文件会触发XXE？
-
-.xlsx文件本质上是一个ZIP压缩包，内部包含多个XML文件：
-- `xl/worksheets/sheet1.xml` - 工作表数据
-- `xl/workbook.xml` - 工作簿结构
-- `[Content_Types].xml` - 内容类型定义
-- 等等...
-
-当后端使用不安全的XML解析器处理这些文件时，就可能被注入恶意的外部实体。
 
 ## 🚀 快速开始
 
@@ -37,9 +33,7 @@ pip install -r requirements.txt
 python create_malicious.py
 ```
 
-这将创建两个测试文件：
-- `malicious_test.xlsx` - 文件读取型XXE测试
-- `ssrf_test.xlsx` - SSRF型XXE测试
+这将创建恶意xlsx文件 `malicious_test.xlsx`，包含XXE攻击载荷。
 
 ### 3. 启动应用
 
@@ -53,76 +47,100 @@ python app.py
 
 1. 打开浏览器访问 `http://localhost:5000`
 2. 选择生成的恶意xlsx文件上传
-3. 分别测试"漏洞版本"和"安全版本"
+3. 查看漏洞验证结果
 
 ## 📁 项目结构
 
 ```
-xxevuln/
-├── app.py                  # Flask Web应用（包含漏洞和安全两种解析方式）
-├── create_malicious.py     # 恶意xlsx文件生成器
+KTVuln/
+├── app.py                  # 主应用入口（统一平台）
+├── create_malicious.py     # 测试文件生成器
 ├── requirements.txt        # Python依赖
 ├── README.md               # 项目说明文档
-├── malicious_test.xlsx     # XXE文件读取测试文件（自动生成）
-├── ssrf_test.xlsx          # SSRF测试文件（自动生成）
-└── uploads/                # 临时上传目录（自动创建）
+├── .gitignore              # Git忽略配置
+└── vuln/                   # 漏洞验证模块目录
+    ├── __init__.py         # 模块包
+    └── xxe.py              # XXE漏洞验证模块
 ```
 
-## 🔍 代码说明
+## 🔧 添加新漏洞模块
 
-### 漏洞版本 (`parse_excel_vulnerable`)
+要添加新的漏洞验证模块，只需以下步骤：
+
+### 1. 在 `vuln/` 目录下创建新模块
 
 ```python
-# 不安全的XML解析 - 允许外部实体
-parser = ET.XMLParser()
-tree = ET.fromstring(xml_content)
+# vuln/sqli.py
+class SQLIVulnerabilityTool:
+    name = "SQL注入验证"
+    icon = "💉"
+    category = "注入攻击"
+    description = "..."
+    accept = "SQL"
+    accept_ext = ".sql"
+    
+    def verify(self, file_path):
+        # 实现验证逻辑
+        pass
 ```
 
-这种配置下，XML解析器会尝试解析和加载外部实体声明，导致XXE漏洞。
+### 2. 在主应用中注册模块
 
-### 安全版本 (`parse_excel_secure`)
+编辑 `app.py`，在 `VULN_TOOLS` 字典中添加：
 
 ```python
-# 安全的XML解析 - 禁止外部实体
-parser = ET.XMLParser(resolve_entities=False, forbid_external=True)
-tree = ET.fromstring(xml_content, parser)
+from vuln.sqli import SQLIVulnerabilityTool
+
+VULN_TOOLS = {
+    'xxe': XXEVulnerabilityTool(),
+    'sqli': SQLIVulnerabilityTool(),  # 新增
+}
 ```
 
-通过禁用实体解析和外部实体访问，可以有效防止XXE攻击。
+### 3. 更新依赖
 
-## 🧪 测试场景
+如果有新的依赖包，添加到 `requirements.txt` 中。
 
-### 场景1: 文件读取（Local File Inclusion）
+## 🧪 XXE漏洞详解
 
-恶意xlsx文件中的外部实体尝试读取服务器文件：
+### 漏洞原理
+
+.xlsx文件本质上是一个ZIP压缩包，内部包含多个XML文件：
+- `xl/workbook.xml` - 工作簿结构
+- `xl/worksheets/sheet1.xml` - 工作表数据
+- `[Content_Types].xml` - 内容类型定义
+- 等等...
+
+当后端使用不安全的XML解析器处理这些文件时，就可能被注入恶意的外部实体。
+
+### 攻击示例
+
+恶意xlsx文件中的 `xl/workbook.xml` 包含：
 
 ```xml
-<!ENTITY xxe SYSTEM "file:///etc/passwd">
+<!DOCTYPE worksheet [
+  <!ENTITY xxe SYSTEM "file:///C:/Windows/win.ini">
+]>
+<workbook>
+  ...
+  <test>&xxe;</test>
+</workbook>
 ```
 
-在漏洞版本中，解析器会尝试读取该文件内容并返回。
+当使用不安全的解析器时，`&xxe;` 会被替换为 `win.ini` 文件的内容。
 
-### 场景2: SSRF（Server-Side Request Forgery）
-
-恶意xlsx文件中的外部实体尝试访问内网服务：
-
-```xml
-<!ENTITY ssrf SYSTEM "http://169.254.169.254/latest/meta-data/">
-```
-
-在漏洞版本中，解析器会尝试访问该URL。
-
-## 🛡️ 如何防御XXE攻击
+## 🛡️ 防御措施
 
 1. **禁用外部实体解析**
    ```python
-   parser = ET.XMLParser(resolve_entities=False, forbid_external=True)
+   from defusedxml.lxml import fromstring
+   tree = fromstring(xml_content)  # 自动阻止XXE
    ```
 
 2. **使用安全的XML解析库**
-   - Python: `lxml` with security options
+   - Python: `defusedxml`
    - Java: `XMLConstants.FEATURE_SECURE_PROCESSING`
-   - PHP: `LIBXML_NOENT` 不要使用
+   - PHP: 不要使用 `LIBXML_NOENT`
 
 3. **输入验证和过滤**
    - 验证文件类型和内容
